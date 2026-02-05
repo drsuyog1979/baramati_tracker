@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Clinic Tracker</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #f4f4f9; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
+        h2 { text-align: center; color: #333; }
+        .row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 10px; background: #f8f9fa; border-radius: 8px; }
+        .label { flex: 1; font-weight: 500; color: #333; }
+        .controls { display: flex; align-items: center; gap: 10px; }
+        .btn { width: 40px; height: 40px; border: none; border-radius: 50%; font-size: 20px; font-weight: bold; cursor: pointer; transition: all 0.2s; }
+        .btn-minus { background: #ff6b6b; color: white; }
+        .btn-minus:active { background: #ee5a52; transform: scale(0.95); }
+        .btn-plus { background: #51cf66; color: white; }
+        .btn-plus:active { background: #40c057; transform: scale(0.95); }
+        .count-display { width: 60px; text-align: center; font-size: 24px; font-weight: bold; color: #007bff; }
+        .total-box { margin-top: 20px; padding: 15px; background: #e7f3ff; border-radius: 8px; text-align: center; }
+        .total-amount { font-size: 28px; font-weight: bold; color: #007bff; margin-top: 5px; }
+        .reset-btn { width: 100%; padding: 12px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 15px; font-size: 16px; font-weight: 500; }
+        .reset-btn:active { background: #c82333; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Clinic Earnings</h2>
+    
+    <div class="row">
+        <div class="label">First Consultation<br><small style="color: #666;">₹700</small></div>
+        <div class="controls">
+            <button class="btn btn-minus" onclick="changeCount('first', -1)">−</button>
+            <div class="count-display" id="first-count">0</div>
+            <button class="btn btn-plus" onclick="changeCount('first', 1)">+</button>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="label">Follow-up<br><small style="color: #666;">₹500</small></div>
+        <div class="controls">
+            <button class="btn btn-minus" onclick="changeCount('followup', -1)">−</button>
+            <div class="count-display" id="followup-count">0</div>
+            <button class="btn btn-plus" onclick="changeCount('followup', 1)">+</button>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="label">IPD Visit<br><small style="color: #666;">₹1000</small></div>
+        <div class="controls">
+            <button class="btn btn-minus" onclick="changeCount('ipd', -1)">−</button>
+            <div class="count-display" id="ipd-count">0</div>
+            <button class="btn btn-plus" onclick="changeCount('ipd', 1)">+</button>
+        </div>
+    </div>
+
+    <div class="total-box">
+        <div style="font-size: 18px; color: #666;">Total Patients: <span id="patientCount" style="font-weight: bold; color: #333;">0</span></div>
+        <div class="total-amount">₹<span id="totalEarnings">0</span></div>
+    </div>
+
+    <button class="reset-btn" onclick="resetDay()">Reset Day</button>
+</div>
+
+<script>
+    var counts = {
+        first: 0,
+        followup: 0,
+        ipd: 0
+    };
+
+    function changeCount(type, change) {
+        counts[type] = Math.max(0, counts[type] + change);
+        document.getElementById(type + '-count').innerText = counts[type];
+        calculate();
+    }
+
+    function calculate() {
+        var totalPatients = counts.first + counts.followup + counts.ipd;
+        var totalAmount = (counts.first * 700) + (counts.followup * 500) + (counts.ipd * 1000);
+
+        document.getElementById('patientCount').innerText = totalPatients;
+        document.getElementById('totalEarnings').innerText = totalAmount.toLocaleString('en-IN');
+    }
+
+    function resetDay() {
+        counts.first = 0;
+        counts.followup = 0;
+        counts.ipd = 0;
+        
+        document.getElementById('first-count').innerText = '0';
+        document.getElementById('followup-count').innerText = '0';
+        document.getElementById('ipd-count').innerText = '0';
+        
+        calculate();
+    }
+</script>
+
+</body>
+</html>
