@@ -19,6 +19,7 @@
         .count-display { width: 60px; text-align: center; font-size: 24px; font-weight: bold; color: #007bff; }
         .total-box { margin-top: 20px; padding: 15px; background: #e7f3ff; border-radius: 8px; text-align: center; }
         .total-amount { font-size: 28px; font-weight: bold; color: #007bff; margin-top: 5px; }
+        .meta { margin-top: 8px; font-size: 12px; color: #666; }
         .reset-btn { width: 100%; padding: 12px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 15px; font-size: 16px; font-weight: 500; }
         .reset-btn:active { background: #c82333; }
     </style>
@@ -31,54 +32,132 @@
     <div class="row">
         <div class="label">First Consultation<br><small style="color: #666;">₹700</small></div>
         <div class="controls">
-            <button class="btn btn-minus" onclick="changeCount('first', -1)">−</button>
+            <button class="btn btn-minus" data-type="first" data-change="-1" aria-label="Decrease first consultation">−</button>
             <div class="count-display" id="first-count">0</div>
-            <button class="btn btn-plus" onclick="changeCount('first', 1)">+</button>
+            <button class="btn btn-plus" data-type="first" data-change="1" aria-label="Increase first consultation">+</button>
         </div>
     </div>
     
     <div class="row">
         <div class="label">Follow-up<br><small style="color: #666;">₹500</small></div>
         <div class="controls">
-            <button class="btn btn-minus" onclick="changeCount('followup', -1)">−</button>
+            <button class="btn btn-minus" data-type="followup" data-change="-1" aria-label="Decrease follow up">−</button>
             <div class="count-display" id="followup-count">0</div>
-            <button class="btn btn-plus" onclick="changeCount('followup', 1)">+</button>
+            <button class="btn btn-plus" data-type="followup" data-change="1" aria-label="Increase follow up">+</button>
         </div>
     </div>
     
     <div class="row">
         <div class="label">IPD Visit<br><small style="color: #666;">₹1000</small></div>
         <div class="controls">
-            <button class="btn btn-minus" onclick="changeCount('ipd', -1)">−</button>
+            <button class="btn btn-minus" data-type="ipd" data-change="-1" aria-label="Decrease IPD visit">−</button>
             <div class="count-display" id="ipd-count">0</div>
-            <button class="btn btn-plus" onclick="changeCount('ipd', 1)">+</button>
+            <button class="btn btn-plus" data-type="ipd" data-change="1" aria-label="Increase IPD visit">+</button>
+        </div>
+    </div>
+
+
+    <div class="row">
+        <div class="label">UPI First Consultation<br><small style="color: #666;">₹700</small></div>
+        <div class="controls">
+            <button class="btn btn-minus" data-type="upiFirst" data-change="-1" aria-label="Decrease UPI first consultation">−</button>
+            <div class="count-display" id="upiFirst-count">0</div>
+            <button class="btn btn-plus" data-type="upiFirst" data-change="1" aria-label="Increase UPI first consultation">+</button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="label">UPI Follow-up<br><small style="color: #666;">₹500</small></div>
+        <div class="controls">
+            <button class="btn btn-minus" data-type="upiFollowup" data-change="-1" aria-label="Decrease UPI follow up">−</button>
+            <div class="count-display" id="upiFollowup-count">0</div>
+            <button class="btn btn-plus" data-type="upiFollowup" data-change="1" aria-label="Increase UPI follow up">+</button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="label">UPI IPD Visit<br><small style="color: #666;">₹1000</small></div>
+        <div class="controls">
+            <button class="btn btn-minus" data-type="upiIpd" data-change="-1" aria-label="Decrease UPI IPD visit">−</button>
+            <div class="count-display" id="upiIpd-count">0</div>
+            <button class="btn btn-plus" data-type="upiIpd" data-change="1" aria-label="Increase UPI IPD visit">+</button>
         </div>
     </div>
 
     <div class="total-box">
         <div style="font-size: 18px; color: #666;">Total Patients: <span id="patientCount" style="font-weight: bold; color: #333;">0</span></div>
         <div class="total-amount">₹<span id="totalEarnings">0</span></div>
+        <div class="meta" id="lastUpdated">Last updated: Never</div>
     </div>
 
-    <button class="reset-btn" onclick="resetDay()">Reset Day</button>
+    <button class="reset-btn" id="resetBtn">Reset Day</button>
 </div>
 
 <script>
+    var STORAGE_KEY = 'clinicTrackerCounts';
+
     var counts = {
         first: 0,
         followup: 0,
-        ipd: 0
+        ipd: 0,
+        upiFirst: 0,
+        upiFollowup: 0,
+        upiIpd: 0
     };
+
+    function saveCounts() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(counts));
+    }
+
+    function loadCounts() {
+        var saved = localStorage.getItem(STORAGE_KEY);
+
+        if (!saved) return;
+
+        try {
+            var parsed = JSON.parse(saved);
+            counts.first = Number(parsed.first) || 0;
+            counts.followup = Number(parsed.followup) || 0;
+            counts.ipd = Number(parsed.ipd) || 0;
+            counts.upiFirst = Number(parsed.upiFirst) || 0;
+            counts.upiFollowup = Number(parsed.upiFollowup) || 0;
+            counts.upiIpd = Number(parsed.upiIpd) || 0;
+        } catch (err) {
+            localStorage.removeItem(STORAGE_KEY);
+        }
+    }
+
+    function updateCounterDisplay() {
+        document.getElementById('first-count').innerText = counts.first;
+        document.getElementById('followup-count').innerText = counts.followup;
+        document.getElementById('ipd-count').innerText = counts.ipd;
+        document.getElementById('upiFirst-count').innerText = counts.upiFirst;
+        document.getElementById('upiFollowup-count').innerText = counts.upiFollowup;
+        document.getElementById('upiIpd-count').innerText = counts.upiIpd;
+    }
+
+    function updateLastUpdated() {
+        var now = new Date();
+        document.getElementById('lastUpdated').innerText = 'Last updated: ' + now.toLocaleTimeString('en-IN');
+    }
 
     function changeCount(type, change) {
         counts[type] = Math.max(0, counts[type] + change);
         document.getElementById(type + '-count').innerText = counts[type];
         calculate();
+        saveCounts();
+        updateLastUpdated();
     }
 
     function calculate() {
-        var totalPatients = counts.first + counts.followup + counts.ipd;
-        var totalAmount = (counts.first * 700) + (counts.followup * 500) + (counts.ipd * 1000);
+        var totalPatients = counts.first + counts.followup + counts.ipd + counts.upiFirst + counts.upiFollowup + counts.upiIpd;
+        var totalAmount =
+            (counts.first * 700) +
+            (counts.followup * 500) +
+            (counts.ipd * 1000) +
+            (counts.upiFirst * 700) +
+            (counts.upiFollowup * 500) +
+            (counts.upiIpd * 1000);
 
         document.getElementById('patientCount').innerText = totalPatients;
         document.getElementById('totalEarnings').innerText = totalAmount.toLocaleString('en-IN');
@@ -88,13 +167,29 @@
         counts.first = 0;
         counts.followup = 0;
         counts.ipd = 0;
-        
-        document.getElementById('first-count').innerText = '0';
-        document.getElementById('followup-count').innerText = '0';
-        document.getElementById('ipd-count').innerText = '0';
-        
+        counts.upiFirst = 0;
+        counts.upiFollowup = 0;
+        counts.upiIpd = 0;
+
+        updateCounterDisplay();
         calculate();
+        saveCounts();
+        updateLastUpdated();
     }
+
+    document.querySelectorAll('.btn').forEach(function (button) {
+        button.addEventListener('click', function () {
+            var type = button.getAttribute('data-type');
+            var change = Number(button.getAttribute('data-change'));
+            changeCount(type, change);
+        });
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', resetDay);
+
+    loadCounts();
+    updateCounterDisplay();
+    calculate();
 </script>
 
 </body>
