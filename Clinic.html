@@ -1,169 +1,615 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Daily Clinic Tracker</title>
+    <meta name="description" content="Daily Clinic Earnings Tracker - Track Cash and UPI consultations">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1a1a2e">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
     <style>
-        body { font-family: sans-serif; padding: 20px; background-color: #f4f4f9; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
-        h2 { text-align: center; color: #333; }
-        .section-label { font-size: 14px; font-weight: 600; color: #fff; padding: 6px 14px; border-radius: 6px; margin: 15px 0 8px 0; text-align: center; }
-        .section-cash { background: #28a745; }
-        .section-upi { background: #6f42c1; }
-        .row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-radius: 8px; }
-        .label { flex: 1; font-weight: 500; color: #333; }
-        .controls { display: flex; align-items: center; gap: 10px; }
-        .btn { width: 40px; height: 40px; border: none; border-radius: 50%; font-size: 20px; font-weight: bold; cursor: pointer; transition: all 0.2s; }
-        .btn-minus { background: #ff6b6b; color: white; }
-        .btn-minus:active { background: #ee5a52; transform: scale(0.95); }
-        .btn-plus { background: #51cf66; color: white; }
-        .btn-plus:active { background: #40c057; transform: scale(0.95); }
-        .count-display { width: 60px; text-align: center; font-size: 24px; font-weight: bold; color: #007bff; }
-        .total-box { margin-top: 20px; padding: 15px; background: #e7f3ff; border-radius: 8px; text-align: center; }
-        .subtotal-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 15px; }
-        .subtotal-label { color: #555; }
-        .subtotal-value { font-weight: bold; }
-        .subtotal-cash { color: #28a745; }
-        .subtotal-upi { color: #6f42c1; }
-        .divider { border: none; border-top: 1px solid #ccc; margin: 8px 0; }
-        .total-amount { font-size: 28px; font-weight: bold; color: #007bff; margin-top: 5px; }
-        .reset-btn { width: 100%; padding: 12px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 15px; font-size: 16px; font-weight: 500; }
-        .reset-btn:active { background: #c82333; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            padding: 16px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 24px 16px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 480px;
+            margin: auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        h2 {
+            text-align: center;
+            color: #fff;
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 4px;
+        }
+
+        .date-display {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 13px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .sync-status {
+            text-align: center;
+            font-size: 11px;
+            margin-bottom: 12px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            display: inline-block;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .sync-saved {
+            color: #51cf66;
+        }
+
+        .sync-saving {
+            color: #ffd43b;
+        }
+
+        .sync-error {
+            color: #ff6b6b;
+        }
+
+        .section-label {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            margin: 16px 0 10px 0;
+            text-align: center;
+        }
+
+        .section-cash {
+            background: linear-gradient(135deg, rgba(40, 167, 69, 0.2), rgba(40, 167, 69, 0.05));
+            color: #51cf66;
+            border: 1px solid rgba(40, 167, 69, 0.2);
+        }
+
+        .section-upi {
+            background: linear-gradient(135deg, rgba(111, 66, 193, 0.2), rgba(111, 66, 193, 0.05));
+            color: #b197fc;
+            border: 1px solid rgba(111, 66, 193, 0.2);
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding: 12px 14px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background 0.2s ease;
+        }
+
+        .row:active {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .label {
+            flex: 1;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+        }
+
+        .label small {
+            color: rgba(255, 255, 255, 0.35);
+            font-weight: 500;
+            font-size: 12px;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn {
+            width: 42px;
+            height: 42px;
+            border: none;
+            border-radius: 12px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn:active {
+            transform: scale(0.9);
+        }
+
+        .btn-minus {
+            background: rgba(255, 107, 107, 0.15);
+            color: #ff6b6b;
+            border: 1px solid rgba(255, 107, 107, 0.2);
+        }
+
+        .btn-plus {
+            background: rgba(81, 207, 102, 0.15);
+            color: #51cf66;
+            border: 1px solid rgba(81, 207, 102, 0.2);
+        }
+
+        .count-display {
+            width: 48px;
+            text-align: center;
+            font-size: 22px;
+            font-weight: 800;
+            color: #fff;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .total-box {
+            margin-top: 20px;
+            padding: 18px;
+            background: linear-gradient(135deg, rgba(0, 123, 255, 0.1), rgba(0, 123, 255, 0.03));
+            border-radius: 16px;
+            border: 1px solid rgba(0, 123, 255, 0.15);
+            text-align: center;
+        }
+
+        .patient-count {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 500;
+        }
+
+        .patient-count span {
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .subtotal-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 14px;
+        }
+
+        .subtotal-label {
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 500;
+        }
+
+        .subtotal-value {
+            font-weight: 700;
+        }
+
+        .subtotal-cash {
+            color: #51cf66;
+        }
+
+        .subtotal-upi {
+            color: #b197fc;
+        }
+
+        .divider {
+            border: none;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            margin: 10px 0;
+        }
+
+        .total-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .total-amount {
+            font-size: 32px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #74b9ff, #a29bfe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-top: 2px;
+        }
+
+        .reset-btn {
+            width: 100%;
+            padding: 14px;
+            background: rgba(220, 53, 69, 0.15);
+            color: #ff6b6b;
+            border: 1px solid rgba(220, 53, 69, 0.2);
+            border-radius: 12px;
+            cursor: pointer;
+            margin-top: 16px;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s ease;
+            letter-spacing: 0.3px;
+        }
+
+        .reset-btn:active {
+            background: rgba(220, 53, 69, 0.3);
+            transform: scale(0.98);
+        }
+
+        /* Pulse animation for count change */
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.15);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .count-pulse {
+            animation: pulse 0.2s ease-out;
+        }
+
+        /* Loading skeleton */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            transition: opacity 0.3s ease;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loader {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #a29bfe;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
     </style>
 </head>
+
 <body>
 
-<div class="card">
-    <h2>Clinic Earnings</h2>
-
-    <!-- Cash Section -->
-    <div class="section-label section-cash">💵 Cash</div>
-
-    <div class="row">
-        <div class="label">Cash First Consultation<br><small style="color: #666;">₹700</small></div>
-        <div class="controls">
-            <button class="btn btn-minus" onclick="changeCount('cashFirst', -1)">−</button>
-            <div class="count-display" id="cashFirst-count">0</div>
-            <button class="btn btn-plus" onclick="changeCount('cashFirst', 1)">+</button>
-        </div>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loader"></div>
     </div>
 
-    <div class="row">
-        <div class="label">Cash Follow-up<br><small style="color: #666;">₹500</small></div>
-        <div class="controls">
-            <button class="btn btn-minus" onclick="changeCount('cashFollowup', -1)">−</button>
-            <div class="count-display" id="cashFollowup-count">0</div>
-            <button class="btn btn-plus" onclick="changeCount('cashFollowup', 1)">+</button>
+    <div class="card">
+        <h2>💊 Clinic Earnings</h2>
+        <div class="date-display" id="dateDisplay"></div>
+        <div class="sync-status sync-saved" id="syncStatus">✓ Synced</div>
+
+        <!-- Cash Section -->
+        <div class="section-label section-cash">💵 Cash</div>
+
+        <div class="row">
+            <div class="label">First Consultation<br><small>₹700</small></div>
+            <div class="controls">
+                <button class="btn btn-minus" onclick="changeCount('cashFirst', -1)">−</button>
+                <div class="count-display" id="cashFirst-count">0</div>
+                <button class="btn btn-plus" onclick="changeCount('cashFirst', 1)">+</button>
+            </div>
         </div>
+
+        <div class="row">
+            <div class="label">Follow-up<br><small>₹500</small></div>
+            <div class="controls">
+                <button class="btn btn-minus" onclick="changeCount('cashFollowup', -1)">−</button>
+                <div class="count-display" id="cashFollowup-count">0</div>
+                <button class="btn btn-plus" onclick="changeCount('cashFollowup', 1)">+</button>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="label">IPD Visit<br><small>₹1000</small></div>
+            <div class="controls">
+                <button class="btn btn-minus" onclick="changeCount('cashIpd', -1)">−</button>
+                <div class="count-display" id="cashIpd-count">0</div>
+                <button class="btn btn-plus" onclick="changeCount('cashIpd', 1)">+</button>
+            </div>
+        </div>
+
+        <!-- UPI Section -->
+        <div class="section-label section-upi">📱 UPI</div>
+
+        <div class="row">
+            <div class="label">First Consultation<br><small>₹700</small></div>
+            <div class="controls">
+                <button class="btn btn-minus" onclick="changeCount('upiFirst', -1)">−</button>
+                <div class="count-display" id="upiFirst-count">0</div>
+                <button class="btn btn-plus" onclick="changeCount('upiFirst', 1)">+</button>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="label">Follow-up<br><small>₹500</small></div>
+            <div class="controls">
+                <button class="btn btn-minus" onclick="changeCount('upiFollowup', -1)">−</button>
+                <div class="count-display" id="upiFollowup-count">0</div>
+                <button class="btn btn-plus" onclick="changeCount('upiFollowup', 1)">+</button>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="label">IPD Visit<br><small>₹1000</small></div>
+            <div class="controls">
+                <button class="btn btn-minus" onclick="changeCount('upiIpd', -1)">−</button>
+                <div class="count-display" id="upiIpd-count">0</div>
+                <button class="btn btn-plus" onclick="changeCount('upiIpd', 1)">+</button>
+            </div>
+        </div>
+
+        <!-- Totals -->
+        <div class="total-box">
+            <div class="patient-count">Total Patients: <span id="patientCount">0</span></div>
+            <hr class="divider">
+            <div class="subtotal-row">
+                <span class="subtotal-label">💵 Cash Total</span>
+                <span class="subtotal-value subtotal-cash">₹<span id="cashTotal">0</span></span>
+            </div>
+            <div class="subtotal-row">
+                <span class="subtotal-label">📱 UPI Total</span>
+                <span class="subtotal-value subtotal-upi">₹<span id="upiTotal">0</span></span>
+            </div>
+            <hr class="divider">
+            <div class="total-label">Grand Total</div>
+            <div class="total-amount">₹<span id="totalEarnings">0</span></div>
+        </div>
+
+        <button class="reset-btn" onclick="resetDay()">Reset Day</button>
     </div>
 
-    <div class="row">
-        <div class="label">Cash IPD Visit<br><small style="color: #666;">₹1000</small></div>
-        <div class="controls">
-            <button class="btn btn-minus" onclick="changeCount('cashIpd', -1)">−</button>
-            <div class="count-display" id="cashIpd-count">0</div>
-            <button class="btn btn-plus" onclick="changeCount('cashIpd', 1)">+</button>
-        </div>
-    </div>
+    <script>
+        // ==================== SUPABASE CONFIG ====================
+        const SUPABASE_URL = 'https://vtwlyprlrbxkxzlnmkdp.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0d2x5cHJscmJ4a3h6bG5ta2RwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2ODU0MDgsImV4cCI6MjA4NzI2MTQwOH0.eAOTlb_j5TUtWHCX1z_WcKt8poImR_E-FbRYgZhoOOU';
 
-    <!-- UPI Section -->
-    <div class="section-label section-upi">📱 UPI</div>
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    <div class="row">
-        <div class="label">UPI First Consultation<br><small style="color: #666;">₹700</small></div>
-        <div class="controls">
-            <button class="btn btn-minus" onclick="changeCount('upiFirst', -1)">−</button>
-            <div class="count-display" id="upiFirst-count">0</div>
-            <button class="btn btn-plus" onclick="changeCount('upiFirst', 1)">+</button>
-        </div>
-    </div>
+        // ==================== STATE ====================
+        var counts = {
+            cashFirst: 0,
+            cashFollowup: 0,
+            cashIpd: 0,
+            upiFirst: 0,
+            upiFollowup: 0,
+            upiIpd: 0
+        };
 
-    <div class="row">
-        <div class="label">UPI Follow-up<br><small style="color: #666;">₹500</small></div>
-        <div class="controls">
-            <button class="btn btn-minus" onclick="changeCount('upiFollowup', -1)">−</button>
-            <div class="count-display" id="upiFollowup-count">0</div>
-            <button class="btn btn-plus" onclick="changeCount('upiFollowup', 1)">+</button>
-        </div>
-    </div>
+        var saveTimer = null;
+        var currentRecordId = null;
 
-    <div class="row">
-        <div class="label">UPI IPD Visit<br><small style="color: #666;">₹1000</small></div>
-        <div class="controls">
-            <button class="btn btn-minus" onclick="changeCount('upiIpd', -1)">−</button>
-            <div class="count-display" id="upiIpd-count">0</div>
-            <button class="btn btn-plus" onclick="changeCount('upiIpd', 1)">+</button>
-        </div>
-    </div>
+        // ==================== DATE HELPERS ====================
+        function getTodayIST() {
+            var now = new Date();
+            // Convert to IST (UTC+5:30)
+            var istOffset = 5.5 * 60 * 60 * 1000;
+            var istDate = new Date(now.getTime() + (istOffset + now.getTimezoneOffset() * 60000));
+            var year = istDate.getFullYear();
+            var month = String(istDate.getMonth() + 1).padStart(2, '0');
+            var day = String(istDate.getDate()).padStart(2, '0');
+            return year + '-' + month + '-' + day;
+        }
 
-    <!-- Totals -->
-    <div class="total-box">
-        <div style="font-size: 18px; color: #666;">Total Patients: <span id="patientCount" style="font-weight: bold; color: #333;">0</span></div>
-        <hr class="divider">
-        <div class="subtotal-row">
-            <span class="subtotal-label">💵 Cash Total:</span>
-            <span class="subtotal-value subtotal-cash">₹<span id="cashTotal">0</span></span>
-        </div>
-        <div class="subtotal-row">
-            <span class="subtotal-label">📱 UPI Total:</span>
-            <span class="subtotal-value subtotal-upi">₹<span id="upiTotal">0</span></span>
-        </div>
-        <hr class="divider">
-        <div class="total-amount">₹<span id="totalEarnings">0</span></div>
-    </div>
+        function formatDateDisplay(dateStr) {
+            var d = new Date(dateStr + 'T00:00:00');
+            var options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+            return d.toLocaleDateString('en-IN', options);
+        }
 
-    <button class="reset-btn" onclick="resetDay()">Reset Day</button>
-</div>
+        // ==================== SUPABASE OPERATIONS ====================
+        async function loadTodayData() {
+            var today = getTodayIST();
+            document.getElementById('dateDisplay').innerText = formatDateDisplay(today);
 
-<script>
-    var counts = {
-        cashFirst: 0,
-        cashFollowup: 0,
-        cashIpd: 0,
-        upiFirst: 0,
-        upiFollowup: 0,
-        upiIpd: 0
-    };
+            // Safety timeout: always hide loader after 8 seconds max
+            var loaderTimeout = setTimeout(function () {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+            }, 8000);
 
-    function changeCount(type, change) {
-        counts[type] = Math.max(0, counts[type] + change);
-        document.getElementById(type + '-count').innerText = counts[type];
-        calculate();
-    }
+            try {
+                var { data, error } = await supabase
+                    .from('daily_clinic')
+                    .select('*')
+                    .eq('date', today)
+                    .maybeSingle();
 
-    function calculate() {
-        var totalPatients = counts.cashFirst + counts.cashFollowup + counts.cashIpd +
-                            counts.upiFirst + counts.upiFollowup + counts.upiIpd;
+                if (error) throw error;
 
-        var cashAmount = (counts.cashFirst * 700) + (counts.cashFollowup * 500) + (counts.cashIpd * 1000);
-        var upiAmount = (counts.upiFirst * 700) + (counts.upiFollowup * 500) + (counts.upiIpd * 1000);
-        var totalAmount = cashAmount + upiAmount;
+                if (data) {
+                    currentRecordId = data.id;
+                    counts.cashFirst = data.cash_first || 0;
+                    counts.cashFollowup = data.cash_followup || 0;
+                    counts.cashIpd = data.cash_ipd || 0;
+                    counts.upiFirst = data.upi_first || 0;
+                    counts.upiFollowup = data.upi_followup || 0;
+                    counts.upiIpd = data.upi_ipd || 0;
+                } else {
+                    // Create today's record
+                    var { data: newData, error: insertErr } = await supabase
+                        .from('daily_clinic')
+                        .insert({ date: today })
+                        .select()
+                        .single();
 
-        document.getElementById('patientCount').innerText = totalPatients;
-        document.getElementById('cashTotal').innerText = cashAmount.toLocaleString('en-IN');
-        document.getElementById('upiTotal').innerText = upiAmount.toLocaleString('en-IN');
-        document.getElementById('totalEarnings').innerText = totalAmount.toLocaleString('en-IN');
-    }
+                    if (insertErr) throw insertErr;
+                    currentRecordId = newData.id;
+                }
 
-    function resetDay() {
-        counts.cashFirst = 0;
-        counts.cashFollowup = 0;
-        counts.cashIpd = 0;
-        counts.upiFirst = 0;
-        counts.upiFollowup = 0;
-        counts.upiIpd = 0;
+                updateAllDisplays();
+                setSyncStatus('saved');
+            } catch (err) {
+                console.error('Load error:', err);
+                setSyncStatus('error');
+                // Still show the UI even if Supabase fails
+                updateAllDisplays();
+            } finally {
+                clearTimeout(loaderTimeout);
+                document.getElementById('loadingOverlay').classList.add('hidden');
+            }
+        }
 
-        document.getElementById('cashFirst-count').innerText = '0';
-        document.getElementById('cashFollowup-count').innerText = '0';
-        document.getElementById('cashIpd-count').innerText = '0';
-        document.getElementById('upiFirst-count').innerText = '0';
-        document.getElementById('upiFollowup-count').innerText = '0';
-        document.getElementById('upiIpd-count').innerText = '0';
+        async function saveToSupabase() {
+            if (!currentRecordId) return;
 
-        calculate();
-    }
-</script>
+            setSyncStatus('saving');
+
+            try {
+                var { error } = await supabase
+                    .from('daily_clinic')
+                    .update({
+                        cash_first: counts.cashFirst,
+                        cash_followup: counts.cashFollowup,
+                        cash_ipd: counts.cashIpd,
+                        upi_first: counts.upiFirst,
+                        upi_followup: counts.upiFollowup,
+                        upi_ipd: counts.upiIpd,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', currentRecordId);
+
+                if (error) throw error;
+                setSyncStatus('saved');
+            } catch (err) {
+                console.error('Save error:', err);
+                setSyncStatus('error');
+            }
+        }
+
+        function debounceSave() {
+            if (saveTimer) clearTimeout(saveTimer);
+            saveTimer = setTimeout(saveToSupabase, 500);
+        }
+
+        // ==================== UI OPERATIONS ====================
+        function setSyncStatus(status) {
+            var el = document.getElementById('syncStatus');
+            if (status === 'saved') {
+                el.className = 'sync-status sync-saved';
+                el.innerText = '✓ Synced';
+            } else if (status === 'saving') {
+                el.className = 'sync-status sync-saving';
+                el.innerText = '⏳ Saving...';
+            } else {
+                el.className = 'sync-status sync-error';
+                el.innerText = '⚠ Sync failed - tap to retry';
+                el.onclick = function () { saveToSupabase(); };
+            }
+        }
+
+        function updateAllDisplays() {
+            document.getElementById('cashFirst-count').innerText = counts.cashFirst;
+            document.getElementById('cashFollowup-count').innerText = counts.cashFollowup;
+            document.getElementById('cashIpd-count').innerText = counts.cashIpd;
+            document.getElementById('upiFirst-count').innerText = counts.upiFirst;
+            document.getElementById('upiFollowup-count').innerText = counts.upiFollowup;
+            document.getElementById('upiIpd-count').innerText = counts.upiIpd;
+            calculate();
+        }
+
+        function changeCount(type, change) {
+            counts[type] = Math.max(0, counts[type] + change);
+            var el = document.getElementById(type + '-count');
+            el.innerText = counts[type];
+
+            // Pulse animation
+            el.classList.remove('count-pulse');
+            void el.offsetWidth; // trigger reflow
+            el.classList.add('count-pulse');
+
+            calculate();
+            debounceSave();
+        }
+
+        function calculate() {
+            var totalPatients = counts.cashFirst + counts.cashFollowup + counts.cashIpd +
+                counts.upiFirst + counts.upiFollowup + counts.upiIpd;
+
+            var cashAmount = (counts.cashFirst * 700) + (counts.cashFollowup * 500) + (counts.cashIpd * 1000);
+            var upiAmount = (counts.upiFirst * 700) + (counts.upiFollowup * 500) + (counts.upiIpd * 1000);
+            var totalAmount = cashAmount + upiAmount;
+
+            document.getElementById('patientCount').innerText = totalPatients;
+            document.getElementById('cashTotal').innerText = cashAmount.toLocaleString('en-IN');
+            document.getElementById('upiTotal').innerText = upiAmount.toLocaleString('en-IN');
+            document.getElementById('totalEarnings').innerText = totalAmount.toLocaleString('en-IN');
+        }
+
+        function resetDay() {
+            if (!confirm('Reset all counts for today?')) return;
+
+            counts.cashFirst = 0;
+            counts.cashFollowup = 0;
+            counts.cashIpd = 0;
+            counts.upiFirst = 0;
+            counts.upiFollowup = 0;
+            counts.upiIpd = 0;
+
+            updateAllDisplays();
+            debounceSave();
+        }
+
+        // ==================== INIT ====================
+        loadTodayData();
+    </script>
 
 </body>
+
 </html>
