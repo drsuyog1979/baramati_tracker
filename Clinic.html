@@ -8,7 +8,10 @@
         body { font-family: sans-serif; padding: 20px; background-color: #f4f4f9; }
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
         h2 { text-align: center; color: #333; }
-        .row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 10px; background: #f8f9fa; border-radius: 8px; }
+        .section-label { font-size: 14px; font-weight: 600; color: #fff; padding: 6px 14px; border-radius: 6px; margin: 15px 0 8px 0; text-align: center; }
+        .section-cash { background: #28a745; }
+        .section-upi { background: #6f42c1; }
+        .row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-radius: 8px; }
         .label { flex: 1; font-weight: 500; color: #333; }
         .controls { display: flex; align-items: center; gap: 10px; }
         .btn { width: 40px; height: 40px; border: none; border-radius: 50%; font-size: 20px; font-weight: bold; cursor: pointer; transition: all 0.2s; }
@@ -18,6 +21,12 @@
         .btn-plus:active { background: #40c057; transform: scale(0.95); }
         .count-display { width: 60px; text-align: center; font-size: 24px; font-weight: bold; color: #007bff; }
         .total-box { margin-top: 20px; padding: 15px; background: #e7f3ff; border-radius: 8px; text-align: center; }
+        .subtotal-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 15px; }
+        .subtotal-label { color: #555; }
+        .subtotal-value { font-weight: bold; }
+        .subtotal-cash { color: #28a745; }
+        .subtotal-upi { color: #6f42c1; }
+        .divider { border: none; border-top: 1px solid #ccc; margin: 8px 0; }
         .total-amount { font-size: 28px; font-weight: bold; color: #007bff; margin-top: 5px; }
         .reset-btn { width: 100%; padding: 12px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 15px; font-size: 16px; font-weight: 500; }
         .reset-btn:active { background: #c82333; }
@@ -27,36 +36,80 @@
 
 <div class="card">
     <h2>Clinic Earnings</h2>
-    
+
+    <!-- Cash Section -->
+    <div class="section-label section-cash">💵 Cash</div>
+
     <div class="row">
-        <div class="label">First Consultation<br><small style="color: #666;">₹700</small></div>
+        <div class="label">Cash First Consultation<br><small style="color: #666;">₹700</small></div>
         <div class="controls">
-            <button class="btn btn-minus" onclick="changeCount('first', -1)">−</button>
-            <div class="count-display" id="first-count">0</div>
-            <button class="btn btn-plus" onclick="changeCount('first', 1)">+</button>
-        </div>
-    </div>
-    
-    <div class="row">
-        <div class="label">Follow-up<br><small style="color: #666;">₹500</small></div>
-        <div class="controls">
-            <button class="btn btn-minus" onclick="changeCount('followup', -1)">−</button>
-            <div class="count-display" id="followup-count">0</div>
-            <button class="btn btn-plus" onclick="changeCount('followup', 1)">+</button>
-        </div>
-    </div>
-    
-    <div class="row">
-        <div class="label">IPD Visit<br><small style="color: #666;">₹1000</small></div>
-        <div class="controls">
-            <button class="btn btn-minus" onclick="changeCount('ipd', -1)">−</button>
-            <div class="count-display" id="ipd-count">0</div>
-            <button class="btn btn-plus" onclick="changeCount('ipd', 1)">+</button>
+            <button class="btn btn-minus" onclick="changeCount('cashFirst', -1)">−</button>
+            <div class="count-display" id="cashFirst-count">0</div>
+            <button class="btn btn-plus" onclick="changeCount('cashFirst', 1)">+</button>
         </div>
     </div>
 
+    <div class="row">
+        <div class="label">Cash Follow-up<br><small style="color: #666;">₹500</small></div>
+        <div class="controls">
+            <button class="btn btn-minus" onclick="changeCount('cashFollowup', -1)">−</button>
+            <div class="count-display" id="cashFollowup-count">0</div>
+            <button class="btn btn-plus" onclick="changeCount('cashFollowup', 1)">+</button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="label">Cash IPD Visit<br><small style="color: #666;">₹1000</small></div>
+        <div class="controls">
+            <button class="btn btn-minus" onclick="changeCount('cashIpd', -1)">−</button>
+            <div class="count-display" id="cashIpd-count">0</div>
+            <button class="btn btn-plus" onclick="changeCount('cashIpd', 1)">+</button>
+        </div>
+    </div>
+
+    <!-- UPI Section -->
+    <div class="section-label section-upi">📱 UPI</div>
+
+    <div class="row">
+        <div class="label">UPI First Consultation<br><small style="color: #666;">₹700</small></div>
+        <div class="controls">
+            <button class="btn btn-minus" onclick="changeCount('upiFirst', -1)">−</button>
+            <div class="count-display" id="upiFirst-count">0</div>
+            <button class="btn btn-plus" onclick="changeCount('upiFirst', 1)">+</button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="label">UPI Follow-up<br><small style="color: #666;">₹500</small></div>
+        <div class="controls">
+            <button class="btn btn-minus" onclick="changeCount('upiFollowup', -1)">−</button>
+            <div class="count-display" id="upiFollowup-count">0</div>
+            <button class="btn btn-plus" onclick="changeCount('upiFollowup', 1)">+</button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="label">UPI IPD Visit<br><small style="color: #666;">₹1000</small></div>
+        <div class="controls">
+            <button class="btn btn-minus" onclick="changeCount('upiIpd', -1)">−</button>
+            <div class="count-display" id="upiIpd-count">0</div>
+            <button class="btn btn-plus" onclick="changeCount('upiIpd', 1)">+</button>
+        </div>
+    </div>
+
+    <!-- Totals -->
     <div class="total-box">
         <div style="font-size: 18px; color: #666;">Total Patients: <span id="patientCount" style="font-weight: bold; color: #333;">0</span></div>
+        <hr class="divider">
+        <div class="subtotal-row">
+            <span class="subtotal-label">💵 Cash Total:</span>
+            <span class="subtotal-value subtotal-cash">₹<span id="cashTotal">0</span></span>
+        </div>
+        <div class="subtotal-row">
+            <span class="subtotal-label">📱 UPI Total:</span>
+            <span class="subtotal-value subtotal-upi">₹<span id="upiTotal">0</span></span>
+        </div>
+        <hr class="divider">
         <div class="total-amount">₹<span id="totalEarnings">0</span></div>
     </div>
 
@@ -65,9 +118,12 @@
 
 <script>
     var counts = {
-        first: 0,
-        followup: 0,
-        ipd: 0
+        cashFirst: 0,
+        cashFollowup: 0,
+        cashIpd: 0,
+        upiFirst: 0,
+        upiFollowup: 0,
+        upiIpd: 0
     };
 
     function changeCount(type, change) {
@@ -77,22 +133,34 @@
     }
 
     function calculate() {
-        var totalPatients = counts.first + counts.followup + counts.ipd;
-        var totalAmount = (counts.first * 700) + (counts.followup * 500) + (counts.ipd * 1000);
+        var totalPatients = counts.cashFirst + counts.cashFollowup + counts.cashIpd +
+                            counts.upiFirst + counts.upiFollowup + counts.upiIpd;
+
+        var cashAmount = (counts.cashFirst * 700) + (counts.cashFollowup * 500) + (counts.cashIpd * 1000);
+        var upiAmount = (counts.upiFirst * 700) + (counts.upiFollowup * 500) + (counts.upiIpd * 1000);
+        var totalAmount = cashAmount + upiAmount;
 
         document.getElementById('patientCount').innerText = totalPatients;
+        document.getElementById('cashTotal').innerText = cashAmount.toLocaleString('en-IN');
+        document.getElementById('upiTotal').innerText = upiAmount.toLocaleString('en-IN');
         document.getElementById('totalEarnings').innerText = totalAmount.toLocaleString('en-IN');
     }
 
     function resetDay() {
-        counts.first = 0;
-        counts.followup = 0;
-        counts.ipd = 0;
-        
-        document.getElementById('first-count').innerText = '0';
-        document.getElementById('followup-count').innerText = '0';
-        document.getElementById('ipd-count').innerText = '0';
-        
+        counts.cashFirst = 0;
+        counts.cashFollowup = 0;
+        counts.cashIpd = 0;
+        counts.upiFirst = 0;
+        counts.upiFollowup = 0;
+        counts.upiIpd = 0;
+
+        document.getElementById('cashFirst-count').innerText = '0';
+        document.getElementById('cashFollowup-count').innerText = '0';
+        document.getElementById('cashIpd-count').innerText = '0';
+        document.getElementById('upiFirst-count').innerText = '0';
+        document.getElementById('upiFollowup-count').innerText = '0';
+        document.getElementById('upiIpd-count').innerText = '0';
+
         calculate();
     }
 </script>
