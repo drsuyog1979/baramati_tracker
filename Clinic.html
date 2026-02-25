@@ -331,6 +331,14 @@
         <div class="loader"></div>
     </div>
 
+    <!-- Independent failsafe: always hide loader after 5s, even if Supabase script fails -->
+    <script>
+        setTimeout(function () {
+            var overlay = document.getElementById('loadingOverlay');
+            if (overlay) overlay.classList.add('hidden');
+        }, 5000);
+    </script>
+
     <div class="card">
         <h2>💊 Clinic Earnings</h2>
         <div class="date-display" id="dateDisplay"></div>
