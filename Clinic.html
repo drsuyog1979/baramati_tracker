@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daily Clinic Tracker</title>
     <meta name="description" content="Daily Clinic Earnings Tracker - Track Cash and UPI consultations">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -32,8 +32,8 @@
 
         .card {
             background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
             padding: 24px 16px;
             border-radius: 20px;
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -51,12 +51,74 @@
             margin-bottom: 4px;
         }
 
+        /* Date Navigation */
+        .date-nav {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .date-nav-btn {
+            width: 36px;
+            height: 36px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.7);
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .date-nav-btn:active {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(0.92);
+        }
+
+        .date-nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
         .date-display {
             text-align: center;
-            color: rgba(255, 255, 255, 0.5);
+            color: rgba(255, 255, 255, 0.7);
             font-size: 13px;
-            margin-bottom: 20px;
-            font-weight: 500;
+            font-weight: 600;
+            min-width: 180px;
+        }
+
+        .date-display.is-today {
+            color: #74b9ff;
+        }
+
+        .today-btn {
+            display: block;
+            margin: 0 auto 12px auto;
+            padding: 4px 16px;
+            background: rgba(116, 185, 255, 0.15);
+            color: #74b9ff;
+            border: 1px solid rgba(116, 185, 255, 0.25);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .today-btn:active {
+            background: rgba(116, 185, 255, 0.3);
+            transform: scale(0.95);
+        }
+
+        .today-btn.hidden {
+            display: none;
         }
 
         .sync-status {
@@ -341,7 +403,15 @@
 
     <div class="card">
         <h2>💊 Clinic Earnings</h2>
-        <div class="date-display" id="dateDisplay"></div>
+
+        <!-- Date Navigation -->
+        <div class="date-nav">
+            <button class="date-nav-btn" id="prevDateBtn" onclick="changeDate(-1)">‹</button>
+            <div class="date-display" id="dateDisplay"></div>
+            <button class="date-nav-btn" id="nextDateBtn" onclick="changeDate(1)">›</button>
+        </div>
+        <button class="today-btn hidden" id="todayBtn" onclick="goToToday()">↻ Today</button>
+
         <div class="sync-status sync-saved" id="syncStatus">✓ Synced</div>
 
         <!-- Cash Section -->
@@ -426,10 +496,20 @@
 
     <script>
         // ==================== SUPABASE CONFIG ====================
-        const SUPABASE_URL = 'https://vtwlyprlrbxkxzlnmkdp.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0d2x5cHJscmJ4a3h6bG5ta2RwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2ODU0MDgsImV4cCI6MjA4NzI2MTQwOH0.eAOTlb_j5TUtWHCX1z_WcKt8poImR_E-FbRYgZhoOOU';
+        var SUPABASE_URL = 'https://vtwlyprlrbxkxzlnmkdp.supabase.co';
+        var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0d2x5cHJscmJ4a3h6bG5ta2RwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2ODU0MDgsImV4cCI6MjA4NzI2MTQwOH0.eAOTlb_j5TUtWHCX1z_WcKt8poImR_E-FbRYgZhoOOU';
 
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Wrap Supabase init in try/catch so UI works even if CDN fails
+        var db = null;
+        try {
+            if (window.supabase) {
+                db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            } else {
+                console.warn('Supabase SDK not loaded. App will work offline.');
+            }
+        } catch (e) {
+            console.error('Supabase init failed:', e);
+        }
 
         // ==================== STATE ====================
         var counts = {
@@ -443,11 +523,11 @@
 
         var saveTimer = null;
         var currentRecordId = null;
+        var currentDate = null; // tracks which date is displayed
 
         // ==================== DATE HELPERS ====================
         function getTodayIST() {
             var now = new Date();
-            // Convert to IST (UTC+5:30)
             var istOffset = 5.5 * 60 * 60 * 1000;
             var istDate = new Date(now.getTime() + (istOffset + now.getTimezoneOffset() * 60000));
             var year = istDate.getFullYear();
@@ -458,47 +538,103 @@
 
         function formatDateDisplay(dateStr) {
             var d = new Date(dateStr + 'T00:00:00');
-            var options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+            var options = { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' };
             return d.toLocaleDateString('en-IN', options);
         }
 
-        // ==================== SUPABASE OPERATIONS ====================
-        async function loadTodayData() {
-            var today = getTodayIST();
-            document.getElementById('dateDisplay').innerText = formatDateDisplay(today);
+        function addDays(dateStr, days) {
+            var d = new Date(dateStr + 'T00:00:00');
+            d.setDate(d.getDate() + days);
+            var year = d.getFullYear();
+            var month = String(d.getMonth() + 1).padStart(2, '0');
+            var day = String(d.getDate()).padStart(2, '0');
+            return year + '-' + month + '-' + day;
+        }
 
-            // Safety timeout: always hide loader after 8 seconds max
-            var loaderTimeout = setTimeout(function () {
+        // ==================== DATE NAVIGATION ====================
+        function changeDate(offset) {
+            var newDate = addDays(currentDate, offset);
+            var today = getTodayIST();
+            // Don't allow going into the future
+            if (newDate > today) return;
+            currentDate = newDate;
+            loadDateData(currentDate);
+        }
+
+        function goToToday() {
+            currentDate = getTodayIST();
+            loadDateData(currentDate);
+        }
+
+        function updateDateUI() {
+            var today = getTodayIST();
+            var dateEl = document.getElementById('dateDisplay');
+            var todayBtn = document.getElementById('todayBtn');
+            var nextBtn = document.getElementById('nextDateBtn');
+
+            dateEl.innerText = formatDateDisplay(currentDate);
+
+            if (currentDate === today) {
+                dateEl.classList.add('is-today');
+                todayBtn.classList.add('hidden');
+                nextBtn.disabled = true;
+            } else {
+                dateEl.classList.remove('is-today');
+                todayBtn.classList.remove('hidden');
+                nextBtn.disabled = false;
+            }
+        }
+
+        // ==================== SUPABASE OPERATIONS ====================
+        async function loadDateData(dateStr) {
+            // Reset counts
+            counts.cashFirst = 0;
+            counts.cashFollowup = 0;
+            counts.cashIpd = 0;
+            counts.upiFirst = 0;
+            counts.upiFollowup = 0;
+            counts.upiIpd = 0;
+            currentRecordId = null;
+
+            updateDateUI();
+
+            if (!db) {
+                // No Supabase — just show empty UI
+                updateAllDisplays();
+                setSyncStatus('error');
                 document.getElementById('loadingOverlay').classList.add('hidden');
-            }, 8000);
+                return;
+            }
+
+            setSyncStatus('saving');
 
             try {
-                var { data, error } = await supabase
+                var result = await db
                     .from('daily_clinic')
                     .select('*')
-                    .eq('date', today)
+                    .eq('date', dateStr)
                     .maybeSingle();
 
-                if (error) throw error;
+                if (result.error) throw result.error;
 
-                if (data) {
-                    currentRecordId = data.id;
-                    counts.cashFirst = data.cash_first || 0;
-                    counts.cashFollowup = data.cash_followup || 0;
-                    counts.cashIpd = data.cash_ipd || 0;
-                    counts.upiFirst = data.upi_first || 0;
-                    counts.upiFollowup = data.upi_followup || 0;
-                    counts.upiIpd = data.upi_ipd || 0;
+                if (result.data) {
+                    currentRecordId = result.data.id;
+                    counts.cashFirst = result.data.cash_first || 0;
+                    counts.cashFollowup = result.data.cash_followup || 0;
+                    counts.cashIpd = result.data.cash_ipd || 0;
+                    counts.upiFirst = result.data.upi_first || 0;
+                    counts.upiFollowup = result.data.upi_followup || 0;
+                    counts.upiIpd = result.data.upi_ipd || 0;
                 } else {
-                    // Create today's record
-                    var { data: newData, error: insertErr } = await supabase
+                    // Create record for this date
+                    var insertResult = await db
                         .from('daily_clinic')
-                        .insert({ date: today })
+                        .insert({ date: dateStr })
                         .select()
                         .single();
 
-                    if (insertErr) throw insertErr;
-                    currentRecordId = newData.id;
+                    if (insertResult.error) throw insertResult.error;
+                    currentRecordId = insertResult.data.id;
                 }
 
                 updateAllDisplays();
@@ -506,21 +642,19 @@
             } catch (err) {
                 console.error('Load error:', err);
                 setSyncStatus('error');
-                // Still show the UI even if Supabase fails
                 updateAllDisplays();
             } finally {
-                clearTimeout(loaderTimeout);
                 document.getElementById('loadingOverlay').classList.add('hidden');
             }
         }
 
         async function saveToSupabase() {
-            if (!currentRecordId) return;
+            if (!currentRecordId || !db) return;
 
             setSyncStatus('saving');
 
             try {
-                var { error } = await supabase
+                var result = await db
                     .from('daily_clinic')
                     .update({
                         cash_first: counts.cashFirst,
@@ -533,7 +667,7 @@
                     })
                     .eq('id', currentRecordId);
 
-                if (error) throw error;
+                if (result.error) throw result.error;
                 setSyncStatus('saved');
             } catch (err) {
                 console.error('Save error:', err);
@@ -615,7 +749,8 @@
         }
 
         // ==================== INIT ====================
-        loadTodayData();
+        currentDate = getTodayIST();
+        loadDateData(currentDate);
     </script>
 
 </body>
